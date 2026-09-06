@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'https://fsd-proj-62kb.onrender.com/api';
+// Ensure /api is at the end of the base URL
+const RAW_URL = import.meta.env.VITE_API_URL || 'https://fsd-proj-62kb.onrender.com/api';
+const API_BASE = RAW_URL.endsWith('/api') ? RAW_URL : `${RAW_URL.replace(/\/+$/, '')}/api`;
 
 const api = axios.create({
   baseURL: API_BASE,
