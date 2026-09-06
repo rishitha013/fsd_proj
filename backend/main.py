@@ -8,14 +8,15 @@ from schemas import LoanApplicationInput, WhatIfRequest, ChatRequest
 from ml_engine import predict_and_explain
 from agent import process_chat
 
+
+
 app = FastAPI(title="LoanLens API Engine", version="1.0.0")
 
-# Enable comprehensive CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
+    allow_credentials=False,  # Set to False when allow_origins=["*"] to prevent strict browser preflight drops
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
