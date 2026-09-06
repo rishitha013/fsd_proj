@@ -1,10 +1,7 @@
 import os
 from motor.motor_asyncio import AsyncIOMotorClient
-from dotenv import load_dotenv
 
-load_dotenv()
-
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
+MONGO_URI = os.getenv("MONGO_URI", "mongodb+srv://rishimopuri_db_user:VSQkqUeJCtfSTlCN@cluster0.lqcncjh.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
 DB_NAME = os.getenv("DB_NAME", "loanlens")
 
 client = AsyncIOMotorClient(MONGO_URI)
