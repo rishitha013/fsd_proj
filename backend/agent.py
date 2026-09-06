@@ -26,26 +26,27 @@ async def tool_get_application(app_id: str):
     except Exception as e:
         return {"error": str(e)}
 
-async def process_chat(message: str, application_id: str = None):
-    # Fetch API Key dynamically from environment or .env
+async def process_chat(message: str, application_id: str = None) -> str:
+    # 1. Retrieve the API key
     api_key = os.getenv("GEMINI_API_KEY", "").strip()
 
     if not api_key or "your_gemini_api_key_here" in api_key:
-        return "Gemini API Key is missing. Please set GEMINI_API_KEY in your Render environment variables."
+        return "Gemini API Key is missing. Please set GEMINI_API_KEY in your Render dashboard environment variables."
 
     genai.configure(api_key=api_key)
 
+    # 2. Build contextual audit data
     context_str = ""
     if application_id:
         app_data = await tool_get_application(application_id)
         if isinstance(app_data, dict) and "error" not in app_data:
             context_str = f"\nLOAN DECISION AUDIT CONTEXT:\n{json.dumps(app_data, default=str)}\n"
 
-    # Use standard stable Google Generative AI production models
-    target_models = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-2.0-flash"]
+    # 3. Call standard production models
+    candidate_models = ["gemini-1.5-flash", "gemini-1.5-pro", "gemini-2.0-flash"]
+    last_err = None
 
-    last_error = None
-    for model_name in target_models:
+    for model_name in candidate_models:
         try:
             model = genai.GenerativeModel(
                 model_name=model_name,
@@ -56,7 +57,7 @@ async def process_chat(message: str, application_id: str = None):
             if response and response.text:
                 return response.text
         except Exception as err:
-            last_error = err
+            last_err = err
             continue
 
-    return f"LoanLens Assistant error: {str(last_error)}"
+    return f"LoanLens Assistant error: {str(last_err)}"
