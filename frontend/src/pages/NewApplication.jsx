@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createApplication } from '../services/api';
-import { Send, Sparkles } from 'lucide-react';
+import { Send, Sparkles, AlertCircle } from 'lucide-react';
 
 const NewApplication = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const [formData, setFormData] = useState({
     applicant_name: 'Aditya Sharma',
     annual_income: 850000,
@@ -31,12 +32,22 @@ const NewApplication = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setErrorMessage('');
+
     try {
       const res = await createApplication(formData);
-      navigate(`/decision/${res.data._id}`);
+      if (res?.data?._id) {
+        navigate(`/decision/${res.data._id}`);
+      } else {
+        throw new Error('Application ID missing from backend response');
+      }
     } catch (err) {
-      alert('Failed to submit application. Verify backend server is running on port 8000.');
-      console.error(err);
+      console.error('Failed to submit application:', err);
+      const detail =
+        err?.response?.data?.detail ||
+        err?.message ||
+        'Failed to connect to the prediction API. Ensure the backend instance is awake.';
+      setErrorMessage(detail);
     } finally {
       setLoading(false);
     }
@@ -50,6 +61,15 @@ const NewApplication = () => {
           Enter applicant financial metrics for real-time XGBoost risk classification & TreeExplainer SHAP breakdown.
         </p>
       </div>
+
+      {errorMessage && (
+        <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-start space-x-3 text-rose-400 text-xs">
+          <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+          <div className="leading-relaxed">
+            <span className="font-semibold">Submission failed:</span> {errorMessage}
+          </div>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="bg-[#0b1120] border border-slate-800 rounded-xl p-6 space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -194,9 +214,9 @@ const NewApplication = () => {
           <button
             type="submit"
             disabled={loading}
-            className="bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-slate-950 font-bold px-6 py-2.5 rounded-lg flex items-center space-x-2 transition-all shadow-md shadow-emerald-950"
+            className="bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-slate-950 font-bold px-6 py-2.5 rounded-lg flex items-center space-x-2 transition-all shadow-md shadow-emerald-950 cursor-pointer disabled:cursor-not-allowed"
           >
-            {loading ? <Sparkles className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+            {loading ? <Sparkles className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4 text-slate-950" />}
             <span>{loading ? 'Evaluating Model Inferences...' : 'Evaluate & Predict'}</span>
           </button>
         </div>
