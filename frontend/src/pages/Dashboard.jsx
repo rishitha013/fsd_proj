@@ -9,19 +9,37 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
     getDashboardStats()
-      .then((res) => setStats(res.data))
-      .catch((err) => console.error(err))
-      .finally(() => setLoading(false));
+      .then((res) => {
+        if (isMounted && res?.data) {
+          setStats(res.data);
+        }
+      })
+      .catch((err) => console.error('Error fetching dashboard stats:', err))
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  if (loading) {
-    return <div className="p-8 text-slate-400">Loading risk metrics...</div>;
+  if (loading || !stats) {
+    return (
+      <div className="p-8 text-slate-400 flex items-center gap-3">
+        <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+        <span>Connecting to risk engine metrics...</span>
+      </div>
+    );
   }
 
+  const recentDecisions = Array.isArray(stats.recent_decisions) ? stats.recent_decisions : [];
+
   const chartData = [
-    { name: 'Approved', value: stats?.approved_count || 0, color: '#10b981' },
-    { name: 'Rejected', value: stats?.rejected_count || 0, color: '#f43f5e' },
+    { name: 'Approved', value: stats.approved_count ?? 0, color: '#10b981' },
+    { name: 'Rejected', value: stats.rejected_count ?? 0, color: '#f43f5e' },
   ];
 
   return (
@@ -37,7 +55,7 @@ const Dashboard = () => {
             <span className="text-xs font-medium">Total Evaluated</span>
             <FileText className="w-4 h-4 text-emerald-400" />
           </div>
-          <div className="text-2xl font-bold text-white">{stats.total_applications}</div>
+          <div className="text-2xl font-bold text-white">{stats.total_applications ?? 0}</div>
         </div>
 
         <div className="bg-[#0b1120] border border-slate-800 rounded-xl p-5">
@@ -45,7 +63,7 @@ const Dashboard = () => {
             <span className="text-xs font-medium">Approved Decisions</span>
             <ShieldCheck className="w-4 h-4 text-emerald-400" />
           </div>
-          <div className="text-2xl font-bold text-white">{stats.approved_count}</div>
+          <div className="text-2xl font-bold text-white">{stats.approved_count ?? 0}</div>
         </div>
 
         <div className="bg-[#0b1120] border border-slate-800 rounded-xl p-5">
@@ -53,7 +71,7 @@ const Dashboard = () => {
             <span className="text-xs font-medium">Rejected Decisions</span>
             <ShieldAlert className="w-4 h-4 text-rose-400" />
           </div>
-          <div className="text-2xl font-bold text-white">{stats.rejected_count}</div>
+          <div className="text-2xl font-bold text-white">{stats.rejected_count ?? 0}</div>
         </div>
 
         <div className="bg-[#0b1120] border border-slate-800 rounded-xl p-5">
@@ -61,7 +79,7 @@ const Dashboard = () => {
             <span className="text-xs font-medium">Mean Model Confidence</span>
             <Percent className="w-4 h-4 text-emerald-400" />
           </div>
-          <div className="text-2xl font-bold text-white">{stats.avg_confidence}%</div>
+          <div className="text-2xl font-bold text-white">{stats.avg_confidence ?? 0}%</div>
         </div>
       </div>
 
@@ -112,15 +130,15 @@ const Dashboard = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800">
-                {stats.recent_decisions.length === 0 ? (
+                {recentDecisions.length === 0 ? (
                   <tr>
                     <td colSpan="5" className="text-center py-6 text-slate-500">No applications recorded yet.</td>
                   </tr>
                 ) : (
-                  stats.recent_decisions.map((d) => (
+                  recentDecisions.map((d) => (
                     <tr key={d.id} className="hover:bg-slate-800/40">
                       <td className="py-3 px-3 font-medium text-white">{d.name}</td>
-                      <td className="py-3 px-3">₹{d.loan_amount.toLocaleString()}</td>
+                      <td className="py-3 px-3">₹{Number(d.loan_amount || 0).toLocaleString()}</td>
                       <td className="py-3 px-3">
                         <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
                           d.approved ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'
