@@ -10,6 +10,7 @@ from agent import process_chat
 
 app = FastAPI(title="LoanLens API Engine", version="1.0.0")
 
+# Enable comprehensive CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -23,6 +24,7 @@ async def health_check():
     return {"status": "healthy", "service": "LoanLens Decision API"}
 
 @app.post("/api/applications")
+@app.post("/api/applications/")
 async def create_application(payload: LoanApplicationInput):
     db = get_db()
     input_data = payload.model_dump()
@@ -46,6 +48,7 @@ async def create_application(payload: LoanApplicationInput):
     return doc
 
 @app.get("/api/applications")
+@app.get("/api/applications/")
 async def list_applications(limit: int = 50, skip: int = 0):
     db = get_db()
     cursor = db.applications.find().sort("created_at", -1).skip(skip).limit(limit)
@@ -56,6 +59,7 @@ async def list_applications(limit: int = 50, skip: int = 0):
     return items
 
 @app.get("/api/applications/{app_id}")
+@app.get("/api/applications/{app_id}/")
 async def get_application(app_id: str):
     db = get_db()
     try:
@@ -68,6 +72,7 @@ async def get_application(app_id: str):
         raise HTTPException(status_code=400, detail="Invalid application ID format")
 
 @app.post("/api/what-if")
+@app.post("/api/what-if/")
 async def execute_what_if(payload: WhatIfRequest):
     db = get_db()
     try:
@@ -98,6 +103,7 @@ async def execute_what_if(payload: WhatIfRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/dashboard/stats")
+@app.get("/api/dashboard/stats/")
 async def get_dashboard_metrics():
     db = get_db()
     total = await db.applications.count_documents({})
@@ -123,11 +129,11 @@ async def get_dashboard_metrics():
     async for r in cursor:
         recent.append({
             "id": str(r["_id"]),
-            "name": r["applicant_name"],
-            "loan_amount": r["inputs"]["loan_amount"],
-            "approved": r["approved"],
-            "probability": r["probability"],
-            "date": r["created_at"].strftime("%b %d, %Y")
+            "name": r.get("applicant_name", "Anonymous"),
+            "loan_amount": r.get("inputs", {}).get("loan_amount", 0),
+            "approved": r.get("approved", False),
+            "probability": r.get("probability", 0),
+            "date": r["created_at"].strftime("%b %d, %Y") if "created_at" in r else "Recent"
         })
 
     return {
@@ -140,6 +146,7 @@ async def get_dashboard_metrics():
     }
 
 @app.post("/api/chat")
+@app.post("/api/chat/")
 async def handle_agent_chat(payload: ChatRequest):
     session_id = payload.session_id or str(uuid.uuid4())
     db = get_db()
