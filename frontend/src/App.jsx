@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
 import Landing from './pages/Landing';
@@ -27,6 +27,8 @@ function LayoutWrapper() {
             <Route path="/apply" element={<NewApplication />} />
             <Route path="/decision/:id" element={<Decision />} />
             <Route path="/history" element={<History />} />
+            {/* Catch-all fallback */}
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </main>
       </div>
