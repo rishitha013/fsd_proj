@@ -1,11 +1,11 @@
 import axios from 'axios';
 
-// Ensure /api is at the end of the base URL
-const RAW_URL = import.meta.env.VITE_API_URL || 'https://fsd-proj-62kb.onrender.com/api';
-const API_BASE = RAW_URL.endsWith('/api') ? RAW_URL : `${RAW_URL.replace(/\/+$/, '')}/api`;
+// Get base URL and cleanly format it without double /api or trailing slashes
+const RAW_URL = (import.meta.env.VITE_API_URL || 'https://fsd-proj-62kb.onrender.com').replace(/\/+$/, '');
+const BASE_URL = RAW_URL.endsWith('/api') ? RAW_URL : `${RAW_URL}/api`;
 
 const api = axios.create({
-  baseURL: API_BASE,
+  baseURL: BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
