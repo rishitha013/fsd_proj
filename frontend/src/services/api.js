@@ -1,11 +1,10 @@
 import axios from 'axios';
 
-// Get base URL and cleanly format it without double /api or trailing slashes
-const RAW_URL = (import.meta.env.VITE_API_URL || 'https://fsd-proj-62kb.onrender.com').replace(/\/+$/, '');
-const BASE_URL = RAW_URL.endsWith('/api') ? RAW_URL : `${RAW_URL}/api`;
+// Directly point to the live Render backend:
+const API_BASE = 'https://fsd-proj-62kb.onrender.com/api';
 
 const api = axios.create({
-  baseURL: BASE_URL,
+  baseURL: API_BASE,
   headers: {
     'Content-Type': 'application/json',
   },
