@@ -11,16 +11,35 @@ const History = () => {
   const recordsPerPage = 15;
 
   useEffect(() => {
-    getApplications(500) // fetch up to 500 records
-      .then((res) => setApps(res.data))
-      .catch((err) => console.error(err))
-      .finally(() => setLoading(false));
+    let isMounted = true;
+    setLoading(true);
+    getApplications(500)
+      .then((res) => {
+        if (isMounted) {
+          setApps(Array.isArray(res?.data) ? res.data : []);
+        }
+      })
+      .catch((err) => {
+        console.error('Error fetching applications history:', err);
+        if (isMounted) setApps([]);
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
-  const filteredApps = apps.filter((a) =>
-    a.applicant_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    a._id.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const safeApps = Array.isArray(apps) ? apps : [];
+
+  const filteredApps = safeApps.filter((a) => {
+    const name = (a?.applicant_name || '').toLowerCase();
+    const id = (a?._id || '').toString().toLowerCase();
+    const term = searchTerm.toLowerCase();
+    return name.includes(term) || id.includes(term);
+  });
 
   const totalPages = Math.ceil(filteredApps.length / recordsPerPage) || 1;
   const startIndex = (currentPage - 1) * recordsPerPage;
@@ -32,7 +51,7 @@ const History = () => {
         <div>
           <h1 className="text-2xl font-bold text-white tracking-tight">Audit & Inferences History</h1>
           <p className="text-sm text-slate-400">
-            Total records in database: <span className="text-emerald-400 font-semibold">{apps.length} applications</span>
+            Total records in database: <span className="text-emerald-400 font-semibold">{safeApps.length} applications</span>
           </p>
         </div>
 
@@ -75,21 +94,21 @@ const History = () => {
               </tr>
             ) : (
               currentRecords.map((a) => (
-                <tr key={a._id} className="hover:bg-slate-800/40 transition-colors">
-                  <td className="py-3.5 px-4 font-mono text-slate-500">{a._id.substring(0, 8)}...</td>
-                  <td className="py-3.5 px-4 font-medium text-white">{a.applicant_name}</td>
-                  <td className="py-3.5 px-4">₹{a.inputs.annual_income.toLocaleString()}</td>
-                  <td className="py-3.5 px-4">₹{a.inputs.loan_amount.toLocaleString()}</td>
+                <tr key={a?._id || Math.random()} className="hover:bg-slate-800/40 transition-colors">
+                  <td className="py-3.5 px-4 font-mono text-slate-500">{String(a?._id || '').substring(0, 8)}...</td>
+                  <td className="py-3.5 px-4 font-medium text-white">{a?.applicant_name || 'Anonymous'}</td>
+                  <td className="py-3.5 px-4">₹{Number(a?.inputs?.annual_income || 0).toLocaleString()}</td>
+                  <td className="py-3.5 px-4">₹{Number(a?.inputs?.loan_amount || 0).toLocaleString()}</td>
                   <td className="py-3.5 px-4">
                     <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
-                      a.approved ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                      a?.approved ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
                     }`}>
-                      {a.approved ? 'APPROVED' : 'REJECTED'}
+                      {a?.approved ? 'APPROVED' : 'REJECTED'}
                     </span>
                   </td>
-                  <td className="py-3.5 px-4 font-semibold">{a.probability}%</td>
+                  <td className="py-3.5 px-4 font-semibold">{a?.probability ?? 0}%</td>
                   <td className="py-3.5 px-4">
-                    <Link to={`/decision/${a._id}`} className="text-emerald-400 hover:text-emerald-300 hover:underline font-medium">
+                    <Link to={`/decision/${a?._id}`} className="text-emerald-400 hover:text-emerald-300 hover:underline font-medium">
                       Inspect SHAP →
                     </Link>
                   </td>
